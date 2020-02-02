@@ -66,3 +66,9 @@ class GeneralSum_Game(object):
         if s in self.end_S:
             return True
         return False
+
+    def get_states(self):
+        return self.S
+
+    def get_actions(self):
+        return self.A
