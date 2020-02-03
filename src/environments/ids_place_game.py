@@ -45,13 +45,19 @@ class GeneralSum_Game(object):
         # T(s, a1, a2, s')
         self.T = [
             [[(1, 0, 0, 0)]],
-            [[(0, 1, 0, 0), (0, 1, 0, 0)], [(0, 0.5, 0.5, 0), (0, 0.9, 0.1, 0)]],
+            [
+                [(0, 1, 0, 0), (0, 1, 0, 0)],
+                [(0, 0.5, 0.5, 0), (0, 0.9, 0.1, 0)]
+            ],
             [
                 [(0, 0, 1, 0), (0, 0, 1, 0), (0, 0, 1, 0)],
                 [(0, 0, 0.3, 0.7), (0, 0.3, 0.1, 0.6), (0, 0, 0.4, 0.6)],
                 [(0, 0, 0.4, 0.6), (0, 0, 0.3, 0.7), (0, 0.5, 0.1, 0.4)],
             ],
-            [[(0, 0, 0, 1), (0, 0, 0, 1)], [(0.8, 0, 0, 0.2), (0.4, 0.4, 0, 0.2)]],
+            [
+                [(0, 0, 0, 1), (0, 0, 0, 1)],
+                [(0.8, 0, 0, 0.2), (0.4, 0.4, 0, 0.2)]
+            ],
         ]
 
     def get_start_state(self):
@@ -66,9 +72,9 @@ class GeneralSum_Game(object):
             print(a2, self.A[0][s])
             raise ValueError('[ERROR] Action names are not present in the game!')
 
-        next_s = np.random.choice(self.S, p=self.T[s][a1][a2])
-        reward_D = self.R[1][s][a1][a2]
-        reward_A = self.R[0][s][a1][a2]
+        next_s = np.random.choice(self.S, p=self.T[s][a2][a1])
+        reward_D = self.R[1][s][a2][a1]
+        reward_A = self.R[0][s][a2][a1]
         return reward_D, reward_A, next_s
 
     def is_end(self, s):

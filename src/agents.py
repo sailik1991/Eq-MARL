@@ -1,7 +1,10 @@
-import warnings
 import nashpy as nash
+import pprint
 
-class Q_learner:
+pp = pprint.PrettyPrinter(indent=2)
+
+
+class QLearner:
     def __init__(self, game_to_play, discount_factor, alpha):
         self.GAME = game_to_play
         self.DISCOUNT_FACTOR = discount_factor
@@ -53,6 +56,10 @@ class Q_learner:
             r_A + self.DISCOUNT_FACTOR * self.V_A[s_next]
         )
 
+    def print_Q(self):
+        pp.pprint(self.Q_A)
+        pp.pprint(self.Q_D)
+
     # Initialize with a uniform random policy over all actions in the state
     def initial_policy(self):
         for s in self.S:
@@ -73,7 +80,7 @@ class Q_learner:
         raise NotImplementedError
 
 
-class NashLearner(Q_learner):
+class NashLearner(QLearner):
     def __init__(self, *args, **kwargs):
         super(NashLearner, self).__init__(*args, **kwargs)
 
@@ -115,8 +122,9 @@ class NashLearner(Q_learner):
         g = nash.Game(R_1, R_2)
         try:
             D_s, A_s = list(g.support_enumeration())[0]
-        except Warning:
-            # Game is degenerate
+        except IndexError:
+            # When there exists no pure strategy nash eq. Unfortunately, this might not always
+            # help when the game is degenerate: https://github.com/drvinceknight/Nashpy/issues/35
             D_s, A_s = list(g.lemke_howson_enumeration())[0]
         game_value = g[D_s, A_s]
 
