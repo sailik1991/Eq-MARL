@@ -55,12 +55,21 @@ class GeneralSum_Game(object):
         ]
 
     def get_start_state(self):
-        return np.random.choice(self.start_S, 1)
+        return np.random.choice(self.start_S)
 
-    def play(self, s, a1, a2):
-        next_s = np.random.choice(self.S, 1, p=self.T[s, a1, a2])
-        reward = np.random.choice(self.R[s, a1, a2])
-        return reward, next_s
+    def act(self, s, a1, a2):
+        try:
+            a1 = self.A[1][s].index(a1)
+            a2 = self.A[0][s].index(a2)
+        except ValueError:
+            print(a1, self.A[1][s])
+            print(a2, self.A[0][s])
+            raise ValueError('[ERROR] Action names are not present in the game!')
+
+        next_s = np.random.choice(self.S, p=self.T[s][a1][a2])
+        reward_D = self.R[1][s][a1][a2]
+        reward_A = self.R[0][s][a1][a2]
+        return reward_D, reward_A, next_s
 
     def is_end(self, s):
         if s in self.end_S:
