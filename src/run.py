@@ -20,10 +20,7 @@ def sample_act_from_policy(pi, epsilon=0.1):
     return np.random.choice(acts, p=probs)
 
 
-def run(episodes=50):
-    env = GeneralSum_Game()
-
-    rl_agent = NashLearner(env, discount_factor=0.5, alpha=0.1)
+def run(env, rl_agent, episodes=30):
     rl_agent.initial_policy()
 
     rewards_D = {}
@@ -55,19 +52,27 @@ def run(episodes=50):
 
             s_t = s_next
 
+    # [Debug] Ensure that the Q-values are approx. equal to true reward values.
     rl_agent.print_Q()
+    rl_agent.print_policy()
 
     states = rewards_D.keys()
-    fig, axl = plt.subplots(len(states) - 1, sharex=True, gridspec_kw={"hspace": 0.4})
-    idx = 0
     for s in states:
         if env.is_end(s):
             continue
-        axl[idx].set_title("State {}".format(s))
-        axl[idx].plot([i for i in range(len(rewards_D[s]))], rewards_D[s])
-        idx += 1
-    plt.savefig("./defender_rewards.png")
+        axl[s - 1].set_title("State {}".format(s))
+        axl[s - 1].plot([i for i in range(len(rewards_D[s]))], rewards_D[s], label=rl_agent.get_name())
+        axl[s - 1].legend(loc='upper right')
 
 
 if __name__ == "__main__":
-    run()
+    env = GeneralSum_Game()
+    fig, axl = plt.subplots(len(env.start_S), sharex=True, gridspec_kw={"hspace": 0.4})
+
+    rl_agent = NashLearner(env, discount_factor=0.5, alpha=0.1)
+    run(env, rl_agent)
+
+    rl_agent = StackelbergLearner(env, discount_factor=0.5, alpha=0.1)
+    run(env, rl_agent)
+
+    plt.savefig("./defender_rewards.png")

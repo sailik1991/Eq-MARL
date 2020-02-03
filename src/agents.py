@@ -1,11 +1,15 @@
 import nashpy as nash
+import importlib
 import pprint
+import abc
 
 pp = pprint.PrettyPrinter(indent=2)
 
 
 class QLearner:
     def __init__(self, game_to_play, discount_factor, alpha):
+        __metaclass__ = abc.ABCMeta
+
         self.GAME = game_to_play
         self.DISCOUNT_FACTOR = discount_factor
         self.ALPHA = alpha
@@ -56,10 +60,6 @@ class QLearner:
             r_A + self.DISCOUNT_FACTOR * self.V_A[s_next]
         )
 
-    def print_Q(self):
-        pp.pprint(self.Q_A)
-        pp.pprint(self.Q_D)
-
     # Initialize with a uniform random policy over all actions in the state
     def initial_policy(self):
         for s in self.S:
@@ -76,13 +76,23 @@ class QLearner:
         assert s in self.S
         return self.policy_D[s], self.policy_A[s]
 
-    def get_values(self):
+    @abc.abstractmethod
+    def update_value_and_policy(self):
         raise NotImplementedError
+
+    def print_Q(self):
+        pp.pprint(self.Q_D)
+        pp.pprint(self.Q_A)
+
+    def print_policy(self):
+        pp.pprint(self.policy_D)
+        pp.pprint(self.policy_A)
 
 
 class NashLearner(QLearner):
     def __init__(self, *args, **kwargs):
         super(NashLearner, self).__init__(*args, **kwargs)
+        self.name = 'NashLearner'
 
     def get_name(self):
         return self.name
@@ -129,3 +139,97 @@ class NashLearner(QLearner):
         game_value = g[D_s, A_s]
 
         return game_value[0], game_value[1], D_s, A_s
+
+
+class StackelbergLearner(QLearner):
+    def __init__(self, *args, **kwargs):
+        super(StackelbergLearner, self).__init__(*args, **kwargs)
+        self.name = 'SSELearner'
+        self.lib = importlib.import_module('gurobi')
+
+    def get_name(self):
+        return self.name
+
+    # Given the Q-values, update (1) the value of state s and (2) the policy of the agents
+    def update_value_and_policy(self, s):
+        num_d = len(self.A_D[s])
+        num_a = len(self.A_A[s])
+
+        m = self.lib.Model('MIQP')
+        m.setParam('OutputFlag', 0)
+        m.setParam('LogFile', '')
+        m.setParam('LogToConsole', 0)
+
+        # Add defender stategies to the model
+        x = []
+        for i in range(num_d):
+            n = 'x_{}'.format(self.A_D[s][i])
+            x.append(m.addVar(lb=0, ub=1, vtype=self.lib.GRB.CONTINUOUS, name=n))
+        m.update()
+
+        # Add defender stategy constraints
+        con = self.lib.LinExpr()
+        for i in range(num_d):
+            con.add(x[i])
+        m.addConstr(con == 1)
+
+        obj = self.lib.QuadExpr()
+        M = 100000000
+
+        q = []
+        for i in range(num_a):
+            n = 'q_{}'.format(self.A_A[s][i])
+            q.append(m.addVar(lb=0, ub=1, vtype=self.lib.GRB.INTEGER, name=n))
+
+        V_a = m.addVar(lb=-self.lib.GRB.INFINITY, ub=self.lib.GRB.INFINITY, vtype=self.lib.GRB.CONTINUOUS, name="V_a")
+        m.update()
+
+        # Get Defender/Leader's Q-value matrix
+        M_D = []
+        M_A = []
+        for d in range(num_d):
+            row_D = []
+            row_A = []
+            for a in range(num_a):
+                k = '{}_{}_{}'.format(s, self.A_D[s][d], self.A_A[s][a])
+                row_D.append(self.Q_D[k])
+                row_A.append(self.Q_A[k])
+            M_D.append(row_D)
+            M_A.append(row_A)
+
+        # Update objective function
+        for i in range(num_d):
+            for j in range(num_a):
+                obj.add(M_D[i][j] * x[i] * q[j])
+
+        # Add constraints to make attaker have a pure strategy
+        con = self.lib.LinExpr()
+        for j in range(num_a):
+            con.add(q[j])
+        m.addConstr(con == 1)
+
+        # Add constrains to make attacker select dominant pure strategy
+        for j in range(num_a):
+            val = self.lib.LinExpr()
+            val.add(V_a)
+            for i in range(num_d):
+                val.add(float(M_A[i][j]) * x[i], -1.0)
+            m.addConstr(val >= 0, q[j].getAttr('VarName') + "_lb")
+            m.addConstr(val <= (1 - q[j]) * M, q[j].getAttr('VarName') + "_ub")
+
+        # Set objective funcion as all attackers have now been considered
+        m.setObjective(obj, self.lib.GRB.MAXIMIZE)
+
+        # Solve MIQP
+        m.optimize()
+
+        self.V_D[s] = float(m.ObjVal)
+        for var in m.getVars():
+            if 'x_' in var.varName:
+                print(var.varName)
+                print(var.varName.replace('x_', 'pi_'))
+                self.policy_D[s][var.varName.replace('x_', 'pi_')] = float(var.x)
+            if 'q_' in var.varName:
+                self.policy_A[s][var.varName.replace('q_', 'pi_')] = float(var.x)
+            if 'V_a' in var.varName:
+                self.V_A[s] = float(var.x)
