@@ -22,8 +22,8 @@ def sample_act_from_policy(pi, epsilon=0.1):
 
 def run(env, rl_agent, episodes=12):
     rl_agent.initial_policy()
-
     rewards_D = {}
+    exploration_rate_decay = 0.99
     for i in range(episodes):
         j = 0
         s_t = env.get_start_state()
@@ -32,8 +32,9 @@ def run(env, rl_agent, episodes=12):
 
             # Sample a policy to execute in state s_t
             pi_D, pi_A = rl_agent.get_policy_in_state(s_t)
-            a_D = sample_act_from_policy(pi_D)
-            a_A = sample_act_from_policy(pi_A)
+            a_D = sample_act_from_policy(pi_D, epsilon=0.11 * exploration_rate_decay)
+            a_A = sample_act_from_policy(pi_A, epsilon=0.11 * exploration_rate_decay)
+            exploration_rate_decay *= exploration_rate_decay
 
             # print('[DEBUG] Policy \nDef: {} \nAtt: {}'.format(pi_D, pi_A))
             # print('[DEBUG] State: {}, Def: {}, Att: {}'.format(s_t, a_D, a_A))
