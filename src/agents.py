@@ -226,8 +226,6 @@ class StackelbergLearner(QLearner):
         self.V_D[s] = float(m.ObjVal)
         for var in m.getVars():
             if 'x_' in var.varName:
-                print(var.varName)
-                print(var.varName.replace('x_', 'pi_'))
                 self.policy_D[s][var.varName.replace('x_', 'pi_')] = float(var.x)
             if 'q_' in var.varName:
                 self.policy_A[s][var.varName.replace('q_', 'pi_')] = float(var.x)

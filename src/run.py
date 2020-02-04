@@ -20,7 +20,7 @@ def sample_act_from_policy(pi, epsilon=0.1):
     return np.random.choice(acts, p=probs)
 
 
-def run(env, rl_agent, episodes=30):
+def run(env, rl_agent, episodes=12):
     rl_agent.initial_policy()
 
     rewards_D = {}
@@ -53,7 +53,8 @@ def run(env, rl_agent, episodes=30):
             s_t = s_next
 
     # [Debug] Ensure that the Q-values are approx. equal to true reward values.
-    rl_agent.print_Q()
+    print('[DEBUG] {}\'s policy:'.format(rl_agent.get_name()))
+    # rl_agent.print_Q()
     rl_agent.print_policy()
 
     states = rewards_D.keys()

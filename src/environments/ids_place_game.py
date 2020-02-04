@@ -15,14 +15,14 @@ class GeneralSum_Game(object):
                 ["success"],
                 ["no-op", "exp-LDAP"],
                 ["no-op", "exp-Web", "exp-FTP"],
-                ["no-op", "exp-FTP"],
+                ["no-op", "exp-FTP"]
             ],
             # Column player (Defender) actions corresponding to each state
             [
                 ["lost"],
                 ["no-mon", "mon-LDAP"],
                 ["no-mon", "mon-Web", "mon-FTP"],
-                ["no-mon", "mon-FTP"],
+                ["no-mon", "mon-FTP"]
             ],
         ]
 
