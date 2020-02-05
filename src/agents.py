@@ -13,7 +13,6 @@ class QLearner:
         self.GAME = game_to_play
         self.DISCOUNT_FACTOR = discount_factor
         self.ALPHA = alpha
-        self.LRD = learning_rate_decay
 
         self.S = self.GAME.get_states()
         # 2-D array indexed by [state][action]
@@ -60,12 +59,6 @@ class QLearner:
         self.Q_A[sda_t] = (1 - self.ALPHA) * self.Q_A[sda_t] + self.ALPHA * (
             r_A + self.DISCOUNT_FACTOR * self.V_A[s_next]
         )
-
-        self.decay_learning_rate()
-
-    def decay_learning_rate(self):
-        self.ALPHA *= self.LRD
-        self.LRD *= self.LRD
 
     # Initialize with a uniform random policy over all actions in the state
     def initial_policy(self):

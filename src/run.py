@@ -14,27 +14,40 @@ def sample_act_from_policy(pi, epsilon=0.1):
         probs = [pi[k] for k in acts]
 
     acts = [a[a.startswith("pi_") and len("pi_") :] for a in acts]
+    probs = [max(0.0, p) for p in probs]
     total_prob = sum(probs)
     probs = [p / total_prob for p in probs]
 
     return np.random.choice(acts, p=probs)
 
 
-def run(env, rl_agent, episodes=12):
+def run(env, rl_agent, episodes=25):
+
+    max_steps_per_episode = 100
+    exploration_rate_decay = 0.999
+
+    # Initialize RL agent with Uniform Random Strategy
     rl_agent.initial_policy()
     rewards_D = {}
-    exploration_rate_decay = 0.99
+
     for i in range(episodes):
+
+        # Read discussion on decaying exploration rate.
+        # https://ai.stackexchange.com/questions/7923/learning-rate-decay-and-exploration-rate-decay
+        # As opposed to doing this after each action, we do this decay after every episode.
+        # A lower bound ensure that if the agent isn't stuck with a back policy just because LR -> 0
+        epsilon = max(0.1 * exploration_rate_decay, 0.03)
+        exploration_rate_decay *= exploration_rate_decay
+
         j = 0
         s_t = env.get_start_state()
-        while j < 100 or not env.is_end(s_t):
+        while j < max_steps_per_episode or not env.is_end(s_t):
             j += 1
 
             # Sample a policy to execute in state s_t
             pi_D, pi_A = rl_agent.get_policy_in_state(s_t)
-            a_D = sample_act_from_policy(pi_D, epsilon=0.11 * exploration_rate_decay)
-            a_A = sample_act_from_policy(pi_A, epsilon=0.11 * exploration_rate_decay)
-            exploration_rate_decay *= exploration_rate_decay
+            a_D = sample_act_from_policy(pi_D, epsilon=epsilon)
+            a_A = sample_act_from_policy(pi_A, epsilon=epsilon)
 
             # print('[DEBUG] Policy \nDef: {} \nAtt: {}'.format(pi_D, pi_A))
             # print('[DEBUG] State: {}, Def: {}, Att: {}'.format(s_t, a_D, a_A))
@@ -72,9 +85,9 @@ if __name__ == "__main__":
     fig, axl = plt.subplots(len(env.start_S), sharex=True, gridspec_kw={"hspace": 0.4})
 
     rl_agent = NashLearner(env, discount_factor=0.5, alpha=0.1)
-    run(env, rl_agent)
+    run(env, rl_agent, episodes=20)
 
     rl_agent = StackelbergLearner(env, discount_factor=0.5, alpha=0.1)
-    run(env, rl_agent)
+    run(env, rl_agent, episodes=35)
 
     plt.savefig("./defender_rewards.png")
