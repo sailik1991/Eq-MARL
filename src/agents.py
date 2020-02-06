@@ -135,6 +135,7 @@ class NashLearner(QLearner):
         except IndexError:
             # When there exists no pure strategy nash eq. Unfortunately, this might not always
             # help when the game is degenerate: https://github.com/drvinceknight/Nashpy/issues/35
+            # print('[DEBUG] Using Lemke Howson Enumeration.')
             D_s, A_s = list(g.lemke_howson_enumeration())[0]
         game_value = g[D_s, A_s]
 
