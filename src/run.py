@@ -1,5 +1,6 @@
 from agents import *
-from environments.ids_place_game import GeneralSum_Game
+# from environments.ids_place_game import Game
+from environments.mtd_switching_costs import Game
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -41,7 +42,7 @@ def run(env, rl_agent, episodes=25):
 
         j = 0
         s_t = env.get_start_state()
-        while j < max_steps_per_episode or not env.is_end(s_t):
+        while j < max_steps_per_episode and not env.is_end(s_t):
             j += 1
 
             # Sample a policy to execute in state s_t
@@ -72,22 +73,23 @@ def run(env, rl_agent, episodes=25):
     rl_agent.print_policy()
 
     states = rewards_D.keys()
+    diff = len(states) - len(axl) + 1
     for s in states:
         if env.is_end(s):
             continue
-        axl[s - 1].set_title("State {}".format(s))
-        axl[s - 1].plot([i for i in range(len(rewards_D[s]))], rewards_D[s], label=rl_agent.get_name())
-        axl[s - 1].legend(loc='upper right')
+        axl[s - diff].set_title("State {}".format(s))
+        axl[s - diff].plot([i for i in range(len(rewards_D[s]))], rewards_D[s], label=rl_agent.get_name())
+        axl[s - diff].legend(loc='upper right')
 
 
 if __name__ == "__main__":
-    env = GeneralSum_Game()
+    env = Game()
     fig, axl = plt.subplots(len(env.start_S), sharex=True, gridspec_kw={"hspace": 0.4})
 
     rl_agent = NashLearner(env, discount_factor=0.5, alpha=0.1)
-    run(env, rl_agent, episodes=20)
+    run(env, rl_agent, episodes=50)
 
     rl_agent = StackelbergLearner(env, discount_factor=0.5, alpha=0.1)
-    run(env, rl_agent, episodes=35)
+    run(env, rl_agent, episodes=50)
 
-    plt.savefig("./defender_rewards.png")
+    plt.savefig("./defender_rewards_mtd.png")

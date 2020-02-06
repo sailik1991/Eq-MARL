@@ -3,7 +3,7 @@ import numpy as np
 __author__ = "Sailik Sengupta"
 
 
-class GeneralSum_Game(object):
+class Game(object):
     def __init__(self):
         self.S = [0, 1, 2, 3]
         self.start_S = [1, 2, 3]
@@ -29,13 +29,13 @@ class GeneralSum_Game(object):
         # R(s, a1, a2)
         self.R = [
             [
-                [[20]],
+                [[100]],
                 [[0, 0], [5, -5]],
                 [[0, 0, 0], [7, -6, 9], [10, 10, -8]],
                 [[0, 0], [10, -10]],
             ],
             [
-                [[-20]],
+                [[-100]],
                 [[0, -3], [-5, 5]],
                 [[0, -2, -3], [-7, 5, -9], [-10, -10, 7]],
                 [[0, -2], [-10, 8]],
