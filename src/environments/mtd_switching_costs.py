@@ -23,6 +23,13 @@ class Game(object):
             [defense_actions for i in self.S]
         ]
 
+        self.opt_pi = {
+            0: {'pi_0': 0.5, 'pi_1': 0.5, 'pi_2': 0.0, 'pi_3': 0.0},
+            1: {'pi_0': 0.5, 'pi_1': 0.5, 'pi_2': 0.0, 'pi_3': 0.0},
+            2: {'pi_0': 0.5, 'pi_1': 0.5, 'pi_2': 0.0, 'pi_3': 0.0},
+            3: {'pi_0': 0.5, 'pi_1': 0.5, 'pi_2': 0.0, 'pi_3': 0.0}
+        }
+
     def get_start_state(self):
         return np.random.choice(self.start_S)
 
@@ -69,3 +76,8 @@ class Game(object):
 
     def get_actions(self):
         return self.A
+
+    # This should only be used for comparison
+    # Computed using the true T and R matrices.
+    def get_optimal_policy(self):
+        return self.opt_pi
