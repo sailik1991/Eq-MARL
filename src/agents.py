@@ -36,13 +36,20 @@ class QLearner:
         for s in self.S:
             # Initialize value functions
             self.V_D[s] = self.V_A[s] = 0
+            if self.GAME.is_end(s):
+                self.V_D[s] = self.GAME.R[1][s][0][0]
+                self.V_A[s] = self.GAME.R[0][s][0][0]
 
             # Initialize Q-value functions
             for d in self.A_D[s]:
                 for a in self.A_A[s]:
                     sda = "{}_{}_{}".format(s, d, a)
-                    self.Q_D[sda] = 0
-                    self.Q_A[sda] = 0
+                    if self.GAME.is_end(s):
+                        self.Q_D[sda] = self.GAME.R[1][s][0][0]
+                        self.Q_A[sda] = self.GAME.R[0][s][0][0]
+                    else:
+                        self.Q_D[sda] = 0
+                        self.Q_A[sda] = 0
 
     # Q-learning update for two-player setting:
     # Q_D(s, d, a) = (1 - alpha) * Q_D(s, d, a) + alpha * (R_D + gamma * V_D)
@@ -51,7 +58,6 @@ class QLearner:
         assert d_t in self.A_D[s_t] and a_t in self.A_A[s_t]
 
         sda_t = "{}_{}_{}".format(s_t, d_t, a_t)
-
         self.Q_D[sda_t] = (1 - self.ALPHA) * self.Q_D[sda_t] + self.ALPHA * (
             r_D + self.DISCOUNT_FACTOR * self.V_D[s_next]
         )

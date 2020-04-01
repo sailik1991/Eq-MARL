@@ -29,13 +29,13 @@ class Game(object):
         # R(s, a1, a2)
         self.R = [
             [
-                [[20]],
+                [[40]],
                 [[0, 0], [5, -5]],
                 [[0, 0, 0], [7, -6, 9], [10, 10, -8]],
                 [[0, 0], [10, -10]],
             ],
             [
-                [[-20]],
+                [[-40]],
                 [[0, -3], [-5, 5]],
                 [[0, -2, -3], [-7, 5, -9], [-10, -10, 7]],
                 [[0, -2], [-10, 8]],
@@ -95,7 +95,7 @@ class Game(object):
     def get_actions(self):
         return self.A
 
-    # This should only be used for comparison
+    # This should only be used for comparison.
     # Computed using the true T and R matrices.
     def get_optimal_policy(self):
         return self.opt_pi
