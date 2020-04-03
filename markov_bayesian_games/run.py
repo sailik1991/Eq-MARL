@@ -8,8 +8,8 @@ import pickle
 import math
 
 PLOT_OPT_DIST = False
-PLOT_EPS = True
-PLOT_R = False
+PLOT_EPS = False
+PLOT_R = True
 
 
 def sample_act_from_policy(pi, epsilon=0.1):
@@ -78,7 +78,7 @@ def run(env, rl_agent, episodes=25, optimal_policy=None):
             # print('[DEBUG] State: {}, Def: {}, Att: {}'.format(s_t, a_D, a_A))
 
             # Act according to sampled policy
-            r_D, r_A, s_next = env.act(s_t, a_D, a_A)
+            r_D, r_A, s_next = env.act(s_t, a_D, a_A, theta)
 
             # Save rewards obtained in a state for plotting
             try:

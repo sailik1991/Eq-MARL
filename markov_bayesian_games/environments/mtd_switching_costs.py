@@ -26,9 +26,9 @@ class Game(object):
             # Attacker actions
             [
                 # Type 1 - Script Kiddie
-                [[a for a in attack_actions if 'low' or 'no' in a] for i in self.S],
+                [[a for a in attack_actions if 'low' in a or 'no' in a] for i in self.S],
                 # Type 2 - SQL Database Hacker
-                [[a for a in attack_actions if '1' or '2' or 'no' in a] for i in self.S],
+                [[a for a in attack_actions if '1' in a or '2' in a or 'no' in a] for i in self.S],
                 # Type 3 - Nation State
                 [attack_actions for i in self.S]
             ],
@@ -47,8 +47,8 @@ class Game(object):
         return np.random.choice(self.start_S)
 
     def act(self, s, a1, a2, t=0):
-        assert a1 in self.A[1][t][s]
-        assert a2 in self.A[0][t][s]
+        assert a1 in self.A[1][s], "Action {} not present in {}".format(a1, self.A[1][s])
+        assert a2 in self.A[0][t][s], "Action {} not present in {}".format(a2, self.A[0][t][s])
 
         next_s = self.S[int(a1)]
         return self.get_reward_D(s, a1, a2), self.get_reward_A(a1, a2), next_s

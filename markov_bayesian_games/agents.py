@@ -85,7 +85,7 @@ class QLearner:
                 self.policy_D[s]["pi_{}".format(self.A_D[s][i])] = 1.0 / len(
                     self.A_D[s]
                 )
-            for theta in self.num_attacker_thetas:
+            for theta in range(self.num_attacker_thetas):
                 for i in range(len(self.A_A[theta][s])):
                     self.policy_A[theta][s][
                         "pi_{}".format(self.A_A[theta][s][i])
@@ -134,7 +134,7 @@ class StackelbergLearner(QLearner):
         x = []
         for i in range(num_d):
             n = "x_{}".format(self.A_D[s][i])
-            x.append(m.addVar(lb=0, ub=1, vtheta=self.lib.GRB.CONTINUOUS, name=n))
+            x.append(m.addVar(lb=0, ub=1, vtype=self.lib.GRB.CONTINUOUS, name=n))
         m.update()
 
         # Add defender strategy constraints
@@ -146,20 +146,20 @@ class StackelbergLearner(QLearner):
         obj = self.lib.QuadExpr()
         M = 100000000
 
-        for theta in self.num_attacker_thetas:
+        for theta in range(self.num_attacker_thetas):
 
             p = self.attacker_theta_probs[theta]
-            q = []
             num_a = len(self.A_A[theta][s])
+            q = []
 
             for i in range(num_a):
                 n = "q_{}_{}".format(theta, self.A_A[theta][s][i])
-                q.append(m.addVar(lb=0, ub=1, vtheta=self.lib.GRB.INTEGER, name=n))
+                q.append(m.addVar(lb=0, ub=1, vtype=self.lib.GRB.INTEGER, name=n))
 
             V_a = m.addVar(
                 lb=-self.lib.GRB.INFINITY,
                 ub=self.lib.GRB.INFINITY,
-                vtheta=self.lib.GRB.CONTINUOUS,
+                vtype=self.lib.GRB.CONTINUOUS,
                 name="V_a_{}".format(theta),
             )
 
@@ -209,12 +209,12 @@ class StackelbergLearner(QLearner):
             if "x_" in var.varName:
                 self.policy_D[s][var.varName.replace("x_", "pi_")] = float(var.x)
             if "q_" in var.varName:
-                for theta in self.attacker_theta_probs:
+                for theta in range(self.num_attacker_thetas):
                     if "q_{}".format(theta) in var.varName:
                         self.policy_A[theta][s][
-                            var.varName.replace("q_{}".format(theta), "pi_")
+                            var.varName.replace("q_{}_".format(theta), "pi_")
                         ] = float(var.x)
             if "V_a" in var.varName:
-                for theta in self.attacker_theta_probs:
+                for theta in range(self.num_attacker_thetas):
                     if "V_a_{}".format(theta) in var.varName:
                         self.V_A[theta][s] = float(var.x)
