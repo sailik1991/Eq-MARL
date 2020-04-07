@@ -1,5 +1,5 @@
 from agents import StackelbergLearner
-from environments.mtd_switching_costs import Game
+from environments.mtd_web_apps.env import Game
 
 import matplotlib.pyplot as plt
 import seaborn as sns
