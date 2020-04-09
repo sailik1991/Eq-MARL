@@ -45,27 +45,6 @@ class Game(object):
                 A_A.append([A_theta for i in self.S])
 
             self.A = [A_A, A_D]
-            print(A_D)
-
-        # Player types
-        # self.attacker_type_probs = [0.4, 0.5, 0.1]
-        # self.num_attacker_types = len(self.attacker_type_probs)
-        #
-        # attack_actions = ["no-op", "low-0", "med-0", "low-1", "high-1", "med-2", "high-2", "high-3"]
-        # defense_actions = [str(i) for i in self.S]
-        # self.A = [
-        #     # Attacker actions
-        #     [
-        #         # Type 1 - Script Kiddie
-        #         [[a for a in attack_actions if 'low' in a or 'no' in a] for i in self.S],
-        #         # Type 2 - SQL Database Hacker
-        #         [[a for a in attack_actions if '1' in a or '2' in a or 'no' in a] for i in self.S],
-        #         # Type 3 - Nation State
-        #         [attack_actions for i in self.S]
-        #     ],
-        #     # Defender's actions
-        #     [defense_actions for i in self.S]
-        # ]
 
         self.opt_pi = {
             0: {'pi_0': 0.5, 'pi_1': 0.5, 'pi_2': 0.0, 'pi_3': 0.0},

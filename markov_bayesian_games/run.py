@@ -210,7 +210,7 @@ if __name__ == "__main__":
 
     ''' Set graph variables '''
     sns.set()
-    sns.set_context("talk")  # options: paper, talk, posters
+    sns.set_context("paper")  # options: paper, talk, posters
     sns.set_palette("deep")
     fig, axl = None, None
     if PLOT_OPT_DIST or PLOT_R:
@@ -220,46 +220,3 @@ if __name__ == "__main__":
 
     ''' Run MARL '''
     run_marl(env, axl, StackelbergLearner, 'SSE')
-
-    # try:
-    #     episode_lengths, state_rewards_for_D, distance_to_optimal_policy = pickle.load(
-    #         open("outputs/exp_data_SSELearner.pickle", "rb")
-    #     )
-    # except:
-    #     episode_lengths, state_rewards_for_D, distance_to_optimal_policy = learn(
-    #         env, StackelbergLearner, num_try=1
-    #     )
-    #     save_data(
-    #         (episode_lengths, state_rewards_for_D, distance_to_optimal_policy),
-    #         file_name="exp_data_{}".format('StackelbergLearner'),
-    #     )
-    # if plot_opt_policy_distance:
-    #     plot_state_scalars(distance_to_optimal_policy, axl, file_suffix="SSE")
-    # if plot_rewards:
-    #     plot_state_scalars(state_rewards_for_D, axl, file_suffix="SSE")
-    # if plot_eps_lengths:
-    #     plot_scalar(episode_lengths)
-
-    # plot_state_scalars(state_rewards_for_D, axl, file_suffix="SSE")
-    # plot_state_scalars(distance_to_optimal_policy, axl, file_suffix='SSE')
-
-    """
-    Code to plot episode length data into a file.
-    """
-    # plt.xlabel('episodes -->')
-    # plt.ylabel('steps --> ')
-    # plt.savefig("./images/episode_length.png")
-
-    """
-    Code to plot state based scalar values into a file.
-    """
-    # fig.text(0.5, 0.04, 'episodes * steps -->', ha='center')
-    # fig.text(0.015, 0.5, 'L2 distance to optimal policy --> ', va='center', rotation='vertical')
-    # plt.savefig("./images/state_rewards.png")
-
-    # plot_episode_lengths(episode_lengths, file_suffix=rl_agent.get_name())
-
-    # rl_agent = StackelbergLearner(env, discount_factor=0.5, alpha=0.1)
-    # run(env, rl_agent, episodes=50)
-
-    # plt.savefig("./defender_rewards_mtd.png")

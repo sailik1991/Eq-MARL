@@ -218,3 +218,4 @@ class StackelbergLearner(QLearner):
                 for theta in range(self.num_attacker_thetas):
                     if "V_a_{}".format(theta) in var.varName:
                         self.V_A[theta][s] = float(var.x)
+        del(m)
