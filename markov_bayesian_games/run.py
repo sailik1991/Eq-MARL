@@ -1,4 +1,4 @@
-from agents import StackelbergLearner
+from agents import StackelbergLearner, URSLearner
 from environments.mtd_web_apps.env import Game
 
 import matplotlib.pyplot as plt
@@ -39,7 +39,7 @@ def compute_policy_distance(p1, p2):
 
 
 def run(env, rl_agent, episodes=25, optimal_policy=None):
-    max_steps_per_episode = 100
+    max_steps_per_episode = 50
     exploration_rate_decay = 0.9999
 
     # Initialize RL agent with Uniform Random Strategy
@@ -49,6 +49,8 @@ def run(env, rl_agent, episodes=25, optimal_policy=None):
     state_rewards_eps = {}
     state_rewards_D = {}
     for i in range(episodes):
+        if i % 50 == 0:
+            print('Episode #{}'.format(i))
 
         # Read discussion on decaying exploration rate.
         # https://ai.stackexchange.com/questions/7923/learning-rate-decay-and-exploration-rate-decay
@@ -126,7 +128,6 @@ def group_episode_lengths(lengths):
             / group_size
         )
         i += 1
-
     return grouped_lengths
 
 
@@ -136,15 +137,18 @@ def plot_scalar(y):
     plt.plot([i for i in range(len(rewards_avg))], rewards_avg, label="avg", color="C0")
 
 
-def plot_state_scalars(state_rewards_D, axl, file_suffix="NashLearner"):
+def plot_state_scalars(state_rewards_D, axl, data_len=100, file_suffix="NashLearner"):
     state_rewards_D = state_rewards_D[0]
     states = state_rewards_D.keys()
 
     for s in states:
+        data_len = min(data_len, len(state_rewards_D[s]))
+        print(data_len)
+
         axl[s].set_title("State {}".format(s))
         axl[s].plot(
-            [i for i in range(len(state_rewards_D[s]))],
-            state_rewards_D[s],
+            [i for i in range(data_len)],
+            state_rewards_D[s][:data_len],
             label=file_suffix,
         )
         axl[s].legend(loc="upper right")
@@ -155,7 +159,7 @@ def save_data(data, file_name="tmp.data"):
         pickle.dump(data, f)
 
 
-def learn(env, learner=StackelbergLearner, num_try=1):
+def learn(env, learner=StackelbergLearner, num_try=2):
     episode_lengths = []
     state_rewards_for_D = []
     distance_to_optimal_policy = []
@@ -164,9 +168,8 @@ def learn(env, learner=StackelbergLearner, num_try=1):
     # opt_pi = env.get_optimal_policy()
 
     for t in range(num_try):
-        # rl_agent = learner(env, discount_factor=0.6, alpha=0.05)
-        rl_agent = learner(env, discount_factor=0.9, alpha=0.05)
-        el, srd, dto = run(env, rl_agent, episodes=99, optimal_policy=opt_pi)
+        rl_agent = learner(env, discount_factor=0.8, alpha=0.05)
+        el, srd, dto = run(env, rl_agent, episodes=150, optimal_policy=opt_pi)
         episode_lengths.append(group_episode_lengths(el))
         state_rewards_for_D.append(srd)
         distance_to_optimal_policy.append(dto)
@@ -177,33 +180,33 @@ def learn(env, learner=StackelbergLearner, num_try=1):
 def run_marl(env, axl, learner=StackelbergLearner, eq="Nash"):
     try:
         episode_lengths, state_rewards_for_D, distance_to_optimal_policy = pickle.load(
-            open("outputs/exp_data_{}Learner.pickle".format(eq), "rb")
+            open("outputs/exp_data_{}<no_such_file>Learner.pickle".format(eq), "rb")
+            # open("outputs/exp_data_{}Learner.pickle".format(eq), "rb")
         )
     except:
         episode_lengths, state_rewards_for_D, distance_to_optimal_policy = learn(
-            env, learner, num_try=1
+            env, learner, num_try=5
         )
         save_data(
             (episode_lengths, state_rewards_for_D, distance_to_optimal_policy),
             file_name="exp_data_{}".format("{}Learner".format(eq)),
         )
 
-    if PLOT_OPT_DIST:
-        plot_state_scalars(distance_to_optimal_policy, axl, file_suffix=eq)
-        fig.text(0.02, 0.5, "L2 distance to pi* --> ", va="center", rotation="vertical")
-        fig.text(0.5, 0.02, "episodes * steps -->", ha="center")
-        plt.savefig("./images/state_pi_diff.png")
-    if PLOT_R:
-        plot_state_scalars(state_rewards_for_D, axl, file_suffix=eq)
-        fig.text(0.015, 0.5, "R (defender) -->", va="center", rotation="vertical")
-        fig.text(0.5, 0.04, "episodes -->", ha="center")
-        plt.savefig("./images/state_rewards.png")
-    if PLOT_EPS:
-        plot_scalar(episode_lengths)
-        plt.xlabel("episodes -->")
-        plt.ylabel("steps --> ")
-        plt.savefig("./images/episode_length.png")
-
+    # if PLOT_OPT_DIST:
+    #     plot_state_scalars(distance_to_optimal_policy, axl, file_suffix=eq)
+    #     fig.text(0.02, 0.5, "L2 distance to pi* --> ", va="center", rotation="vertical")
+    #     fig.text(0.5, 0.02, "episodes * steps -->", ha="center")
+    #     plt.savefig("./images/state_pi_diff.png")
+    # if PLOT_R:
+    #     plot_state_scalars(state_rewards_for_D, axl, file_suffix=eq)
+    #     fig.text(0.015, 0.5, "R (defender) -->", va="center", rotation="vertical")
+    #     fig.text(0.5, 0.04, "episodes -->", ha="center")
+    #     plt.savefig("./images/state_rewards.png")
+    # if PLOT_EPS:
+    #     plot_scalar(episode_lengths)
+    #     plt.xlabel("episodes -->")
+    #     plt.ylabel("steps --> ")
+    #     plt.savefig("./images/episode_length.png")
 
 if __name__ == "__main__":
     env = Game()
@@ -212,6 +215,7 @@ if __name__ == "__main__":
     sns.set()
     sns.set_context("paper")  # options: paper, talk, posters
     sns.set_palette("deep")
+
     fig, axl = None, None
     if PLOT_OPT_DIST or PLOT_R:
         fig, axl = plt.subplots(
@@ -219,4 +223,5 @@ if __name__ == "__main__":
         )
 
     ''' Run MARL '''
+    run_marl(env, axl, URSLearner, 'URS')
     run_marl(env, axl, StackelbergLearner, 'SSE')
