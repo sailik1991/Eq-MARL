@@ -1,4 +1,4 @@
-from agents import NashLearner, StackelbergLearner
+from agents import NashLearner, StackelbergLearner, URSLearner, EXPLearner
 from environments.ids_place_game import Game
 
 # from environments.mtd_switching_costs import Game
@@ -157,7 +157,7 @@ def save_data(data, file_name="tmp.data"):
         pickle.dump(data, f)
 
 
-def learn(env, learner=NashLearner, num_try=1):
+def learn(env, learner=NashLearner, num_try=2):
     episode_lengths = []
     state_rewards_for_D = []
     distance_to_optimal_policy = []
@@ -166,9 +166,8 @@ def learn(env, learner=NashLearner, num_try=1):
     # opt_pi = env.get_optimal_policy()
 
     for t in range(num_try):
-        # rl_agent = learner(env, discount_factor=0.6, alpha=0.05)
-        rl_agent = learner(env, discount_factor=0.9, alpha=0.05)
-        el, srd, dto = run(env, rl_agent, episodes=99, optimal_policy=opt_pi)
+        rl_agent = learner(env, discount_factor=0.8, alpha=0.05)
+        el, srd, dto = run(env, rl_agent, episodes=150, optimal_policy=opt_pi)
         episode_lengths.append(group_episode_lengths(el))
         state_rewards_for_D.append(srd)
         distance_to_optimal_policy.append(dto)
@@ -176,90 +175,25 @@ def learn(env, learner=NashLearner, num_try=1):
     return episode_lengths, state_rewards_for_D, distance_to_optimal_policy
 
 
-def run_marl(env, axl, learner=NashLearner, eq="Nash"):
+def run_marl(env, learner=NashLearner, eq="Nash"):
     try:
         episode_lengths, state_rewards_for_D, distance_to_optimal_policy = pickle.load(
             open("outputs/exp_data_{}Learner.pickle".format(eq), "rb")
         )
     except:
         episode_lengths, state_rewards_for_D, distance_to_optimal_policy = learn(
-            env, learner, num_try=1
+            env, learner, num_try=10
         )
         save_data(
             (episode_lengths, state_rewards_for_D, distance_to_optimal_policy),
             file_name="exp_data_{}".format("{}Learner".format(eq)),
         )
 
-    if PLOT_OPT_DIST:
-        plot_state_scalars(distance_to_optimal_policy, axl, file_suffix=eq)
-        fig.text(0.02, 0.5, "L2 distance to pi* --> ", va="center", rotation="vertical")
-        fig.text(0.5, 0.02, "episodes * steps -->", ha="center")
-        plt.savefig("./images/state_pi_diff.png")
-    if PLOT_R:
-        plot_state_scalars(state_rewards_for_D, axl, file_suffix=eq)
-        fig.text(0.015, 0.5, "R (defender) -->", va="center", rotation="vertical")
-        fig.text(0.5, 0.04, "episodes -->", ha="center")
-        plt.savefig("./images/state_rewards.png")
-    if PLOT_EPS:
-        plot_scalar(episode_lengths)
-        plt.xlabel("episodes -->")
-        plt.ylabel("steps --> ")
-        plt.savefig("./images/episode_length.png")
-
 
 if __name__ == "__main__":
     env = Game()
-    sns.set()
-    # sns.set_context("paper")
-    sns.set_context("talk")
-    sns.set_palette("deep")
-    fig, axl = None, None
-    if PLOT_OPT_DIST or PLOT_R:
-        fig, axl = plt.subplots(
-            len(env.S), sharex=True, figsize=(7, 8.5), gridspec_kw={"hspace": 0.4}
-        )
-    run_marl(env, axl, NashLearner, 'Nash')
-    run_marl(env, axl, StackelbergLearner, 'SSE')
 
-    # try:
-    #     episode_lengths, state_rewards_for_D, distance_to_optimal_policy = pickle.load(
-    #         open("outputs/exp_data_SSELearner.pickle", "rb")
-    #     )
-    # except:
-    #     episode_lengths, state_rewards_for_D, distance_to_optimal_policy = learn(
-    #         env, StackelbergLearner, num_try=1
-    #     )
-    #     save_data(
-    #         (episode_lengths, state_rewards_for_D, distance_to_optimal_policy),
-    #         file_name="exp_data_{}".format('StackelbergLearner'),
-    #     )
-    # if plot_opt_policy_distance:
-    #     plot_state_scalars(distance_to_optimal_policy, axl, file_suffix="SSE")
-    # if plot_rewards:
-    #     plot_state_scalars(state_rewards_for_D, axl, file_suffix="SSE")
-    # if plot_eps_lengths:
-    #     plot_scalar(episode_lengths)
-
-    # plot_state_scalars(state_rewards_for_D, axl, file_suffix="SSE")
-    # plot_state_scalars(distance_to_optimal_policy, axl, file_suffix='SSE')
-
-    """
-    Code to plot episode length data into a file.
-    """
-    # plt.xlabel('episodes -->')
-    # plt.ylabel('steps --> ')
-    # plt.savefig("./images/episode_length.png")
-
-    """
-    Code to plot state based scalar values into a file.
-    """
-    # fig.text(0.5, 0.04, 'episodes * steps -->', ha='center')
-    # fig.text(0.015, 0.5, 'L2 distance to optimal policy --> ', va='center', rotation='vertical')
-    # plt.savefig("./images/state_rewards.png")
-
-    # plot_episode_lengths(episode_lengths, file_suffix=rl_agent.get_name())
-
-    # rl_agent = StackelbergLearner(env, discount_factor=0.5, alpha=0.1)
-    # run(env, rl_agent, episodes=50)
-
-    # plt.savefig("./defender_rewards_mtd.png")
+    run_marl(env, NashLearner, 'Nash')
+    run_marl(env, StackelbergLearner, 'SSE')
+    run_marl(env, URSLearner, 'URS')
+    run_marl(env, EXPLearner, 'EXP')
