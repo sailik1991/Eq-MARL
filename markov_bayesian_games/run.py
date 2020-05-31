@@ -1,4 +1,4 @@
-from agents import StackelbergLearner, URSLearner, EXPLearner
+from agents import StackelbergLearner, URSLearner, EXPLearner, StaticPolicyNoLearner
 from environments.mtd_web_apps.env import Game
 
 import matplotlib.pyplot as plt
@@ -38,8 +38,8 @@ def compute_policy_distance(p1, p2):
     return math.sqrt(distance)
 
 
-def run(env, rl_agent, episodes=25, epsilon=0.1, optimal_policy=None):
-    max_steps_per_episode = 50
+def run(env, rl_agent, episodes=25, eps_d=0.1, optimal_policy=None):
+    max_steps_per_episode = 25
     exploration_rate_decay = 0.9999
 
     # Initialize RL agent with Uniform Random Strategy
@@ -59,7 +59,10 @@ def run(env, rl_agent, episodes=25, epsilon=0.1, optimal_policy=None):
         A lower bound ensures that the agent isn't stuck with a bad policy just because LR -> 0
         Also, if agent is EXP-Q, no exploration is needed here (eps = 0). The agent policy accounts for it.
         """
-        epsilon = max(epsilon * exploration_rate_decay, 0.05)
+        # The defender might have a static policy that does not learn. In such cases,
+        # as per the stackelberg threat model, the attacker should be albe to select a best response.
+        eps_d = max(eps_d * exploration_rate_decay, 0.05) if eps_d > 0.05 else eps_d
+        eps_a = eps_d if eps_d > 0.0 else 0.2 * exploration_rate_decay
         exploration_rate_decay *= exploration_rate_decay
 
         j = 0
@@ -69,8 +72,8 @@ def run(env, rl_agent, episodes=25, epsilon=0.1, optimal_policy=None):
 
             # Sample a policy to execute in state s_t
             pi_D, pi_A, theta = rl_agent.get_policy_in_state(s_t)
-            a_D = sample_act_from_policy(pi_D, epsilon=epsilon)
-            a_A = sample_act_from_policy(pi_A, epsilon=epsilon)
+            a_D = sample_act_from_policy(pi_D, epsilon=eps_d)
+            a_A = sample_act_from_policy(pi_A, epsilon=eps_a)
 
             # Save distance to optimal policy before acting in the env.
             if optimal_policy:
@@ -112,8 +115,8 @@ def run(env, rl_agent, episodes=25, epsilon=0.1, optimal_policy=None):
         eps_lengths.append(j)
 
     # [Debug] Ensure that the Q-values are approx. equal to true reward values.
-    print("[DEBUG] {}'s learnt values:".format(rl_agent.get_name()))
-    rl_agent.print_Q()
+    # print("[DEBUG] {}'s learnt values:".format(rl_agent.get_name()))
+    # rl_agent.print_Q()
 
     print("[DEBUG] {}'s policy:".format(rl_agent.get_name()))
     rl_agent.print_policy()
@@ -126,7 +129,7 @@ def save_data(data, file_name="tmp.data"):
         pickle.dump(data, f)
 
 
-def learn(env, learner=StackelbergLearner, num_try=2, epsilon=0.1):
+def learn(env, learner=StackelbergLearner, num_try=2, eps_d=0.1):
     episode_lengths = []
     state_rewards_for_D = []
     distance_to_optimal_policy = []
@@ -137,7 +140,7 @@ def learn(env, learner=StackelbergLearner, num_try=2, epsilon=0.1):
     for t in range(num_try):
         rl_agent = learner(env, discount_factor=0.8, alpha=0.05)
         el, srd, dto = run(
-            env, rl_agent, episodes=20, optimal_policy=opt_pi, epsilon=epsilon
+            env, rl_agent, episodes=200, optimal_policy=opt_pi, eps_d=eps_d
         )
         episode_lengths.append(el)
         state_rewards_for_D.append(srd)
@@ -154,9 +157,11 @@ def run_marl(env, learner=StackelbergLearner, eq="Nash"):
             open("outputs/exp_data_{}Learner.pickle".format(eq), "rb")
         )
     except:
-        epsilon = 0 if eq == "EXP" else 0.1
+        # For static policies, defender does not do exploitations
+        # For EXP-Q learning, exploitation is part of the reward assessment.
+        eps_d = 0.2 if eq == "SSE" else 0
         episode_lengths, state_rewards_for_D, distance_to_optimal_policy = learn(
-            env, learner, num_try=2, epsilon=epsilon
+            env, learner, num_try=6, eps_d=eps_d
         )
         save_data(
             (episode_lengths, state_rewards_for_D, distance_to_optimal_policy),
@@ -169,5 +174,8 @@ if __name__ == "__main__":
 
     """ Run MARL """
     run_marl(env, URSLearner, "URS")
-    run_marl(env, StackelbergLearner, "SSE")
     run_marl(env, EXPLearner, "EXP")
+    run_marl(env, StackelbergLearner, "SSE")
+
+    env_with_start_states = Game(start_states=[2, 3])
+    run_marl(env_with_start_states, StaticPolicyNoLearner, "SPNL")

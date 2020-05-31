@@ -4,7 +4,7 @@ __author__ = "Sailik Sengupta"
 
 
 class Game(object):
-    def __init__(self):
+    def __init__(self, start_states=None):
         """
         self.S = list               # State
         self.start_S = list         # Start States
@@ -15,7 +15,7 @@ class Game(object):
         with open("./environments/mtd_web_apps/game.txt", "r") as f:
             num_states = int(f.readline())
             self.S = [i for i in range(num_states)]
-            self.start_S = self.S
+            self.start_S = start_states if start_states is not None else self.S
             self.end_S = []
 
             defense_actions = [str(i) for i in self.S]
@@ -41,9 +41,7 @@ class Game(object):
                     assert len(rewards) == num_attacks
                     for i in range(num_attacks):
                         k_i = "{}_{}_{}".format(theta, config, A_theta[i])
-                        self.R_D[k_i], self.R_A[k_i] = tuple(
-                            map(float, rewards[i].split((",")))
-                        )
+                        self.R_D[k_i], self.R_A[k_i] = list(map(float, rewards[i].split(",")))
 
                 A_A.append([A_theta for i in self.S])
 
@@ -69,7 +67,7 @@ class Game(object):
 
         next_s = self.S[int(a_D)]
         k = "{}_{}_{}".format(t, a_D, a_A)
-        return self.R_D[k], self.R_A[k], next_s
+        return self.R_D[k] - 0.1 * self.switching_cost[s][next_s], self.R_A[k], next_s
 
     def is_end(self, s):
         if s in self.end_S:
