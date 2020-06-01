@@ -1,17 +1,14 @@
 from agents import NashLearner, StackelbergLearner, URSLearner, EXPLearner
 from environments.ids_place_game import Game
-
-# from environments.mtd_switching_costs import Game
-
 import matplotlib.pyplot as plt
 import seaborn as sns
+import configparser
 import numpy as np
 import pickle
 import math
 
-PLOT_OPT_DIST = True
-PLOT_EPS = False
-PLOT_R = False
+config = configparser.ConfigParser()
+config.read('hyperparameters.ini')
 
 
 def sample_act_from_policy(pi, epsilon=0.1):
@@ -40,8 +37,8 @@ def compute_policy_distance(p1, p2):
     return math.sqrt(distance)
 
 
-def run(env, rl_agent, episodes=25, optimal_policy=None):
-    max_steps_per_episode = 100
+def run(env, rl_agent, episodes=25, eps_d=0.1, optimal_policy=None):
+    max_steps_per_episode = int(config['HP']['STEPS_PER_EPISODE'])
     exploration_rate_decay = 0.9999
 
     # Initialize RL agent with Uniform Random Strategy
@@ -56,7 +53,8 @@ def run(env, rl_agent, episodes=25, optimal_policy=None):
         # https://ai.stackexchange.com/questions/7923/learning-rate-decay-and-exploration-rate-decay
         # As opposed to doing this after each action, we do this decay after every episode.
         # A lower bound ensures that the agent isn't stuck with a bad policy just because LR -> 0
-        epsilon = max(0.1 * exploration_rate_decay, 0.05)
+        eps_d = max(eps_d * exploration_rate_decay, 0.05)
+        eps_a = max(float(config['HP']['EPS_A']) * exploration_rate_decay, 0.05)
         exploration_rate_decay *= exploration_rate_decay
         j = 0
         s_t = env.get_start_state()
@@ -65,8 +63,8 @@ def run(env, rl_agent, episodes=25, optimal_policy=None):
 
             # Sample a policy to execute in state s_t
             pi_D, pi_A = rl_agent.get_policy_in_state(s_t)
-            a_D = sample_act_from_policy(pi_D, epsilon=epsilon)
-            a_A = sample_act_from_policy(pi_A, epsilon=epsilon)
+            a_D = sample_act_from_policy(pi_D, epsilon=eps_d)
+            a_A = sample_act_from_policy(pi_A, epsilon=eps_a)
 
             # Save distance to optimal policy before acting in the env.
             if optimal_policy:
@@ -157,7 +155,7 @@ def save_data(data, file_name="tmp.data"):
         pickle.dump(data, f)
 
 
-def learn(env, learner=NashLearner, num_try=2):
+def learn(env, learner=NashLearner, num_try=2, eps_d=0.1):
     episode_lengths = []
     state_rewards_for_D = []
     distance_to_optimal_policy = []
@@ -166,8 +164,14 @@ def learn(env, learner=NashLearner, num_try=2):
     # opt_pi = env.get_optimal_policy()
 
     for t in range(num_try):
-        rl_agent = learner(env, discount_factor=0.8, alpha=0.05)
-        el, srd, dto = run(env, rl_agent, episodes=150, optimal_policy=opt_pi)
+        rl_agent = learner(env,
+                           discount_factor=float(config['HP']['GAMMA']),
+                           alpha=float(config['HP']['ALPHA']))
+        el, srd, dto = run(env,
+                           rl_agent,
+                           episodes=int(config['HP']['EPISODES']),
+                           eps_d=eps_d,
+                           optimal_policy=opt_pi)
         episode_lengths.append(group_episode_lengths(el))
         state_rewards_for_D.append(srd)
         distance_to_optimal_policy.append(dto)
@@ -181,8 +185,9 @@ def run_marl(env, learner=NashLearner, eq="Nash"):
             open("outputs/exp_data_{}Learner.pickle".format(eq), "rb")
         )
     except:
+        eps_d = float(config['HP']['EPS_D']) if eq in "SSE,Nash" else 0
         episode_lengths, state_rewards_for_D, distance_to_optimal_policy = learn(
-            env, learner, num_try=10
+            env, learner, num_try=int(config['HP']['NUM_TRIALS']), eps_d=eps_d
         )
         save_data(
             (episode_lengths, state_rewards_for_D, distance_to_optimal_policy),

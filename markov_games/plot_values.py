@@ -51,8 +51,8 @@ if __name__ == "__main__":
     sns.set_palette("deep")
 
     rewards = get_data("SSE")
-    rewards += get_data("Nash")
     rewards += get_data("URS")
     rewards += get_data("EXP")
+    rewards += get_data("Nash")
 
     plot_rewards(rewards)
