@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
     rewards = get_data("SSE")
     rewards += get_data("URS")
-    rewards += get_data("SPNL")
     rewards += get_data("EXP")
+    rewards += get_data("SPNL")
 
     plot_rewards(rewards)
