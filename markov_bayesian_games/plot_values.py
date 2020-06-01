@@ -32,7 +32,7 @@ def plot_rewards(state_rewards):
     plt.savefig("./images/state_rewards.png")
 
 
-def get_data(agent="SSE", data_len=99):
+def get_data(agent="SSE", data_len=100):
     episode_lengths, state_rewards_for_D, distance_to_optimal_policy = pickle.load(
         open("outputs/exp_data_{}Learner.pickle".format(agent), "rb")
     )
@@ -66,11 +66,13 @@ if __name__ == "__main__":
     """ Set graph variables """
     sns.set()
     sns.set_context("paper")  # options: paper, talk, posters
-    sns.set_palette("deep")
+    my_colors = sns.set_palette("deep")
+    # my_colors = sns.xkcd_palette(['denim blue', 'amber', 'pale red', 'faded green'])
+    sns.set_palette(sns.color_palette(my_colors))
 
     rewards = get_data("SSE")
     rewards += get_data("URS")
-    rewards += get_data("EXP")
     rewards += get_data("SPNL")
+    rewards += get_data("EXP")
 
     plot_rewards(rewards)
