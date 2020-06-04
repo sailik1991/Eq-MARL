@@ -1,15 +1,13 @@
-from agents import StackelbergLearner, URSLearner, EXPLearner, StaticPolicyNoLearner
-from environments.mtd_web_apps.env import Game
-
-import matplotlib.pyplot as plt
-import seaborn as sns
+from agents import StackelbergLearner, URSLearner, EXPLearner, NashLearner, StaticPolicyNoLearner
+import configparser
 import numpy as np
+import importlib
 import pickle
 import math
+import time
 
-PLOT_OPT_DIST = False
-PLOT_EPS = False
-PLOT_R = True
+config = configparser.ConfigParser()
+config.read('hyperparameters.ini')
 
 
 def sample_act_from_policy(pi, epsilon=0.1):
@@ -39,7 +37,7 @@ def compute_policy_distance(p1, p2):
 
 
 def run(env, rl_agent, episodes=25, eps_d=0.1, optimal_policy=None):
-    max_steps_per_episode = 25
+    max_steps_per_episode = int(config['HP']['STEPS_PER_EPISODE'])
     exploration_rate_decay = 0.9999
 
     # Initialize RL agent with Uniform Random Strategy
@@ -60,9 +58,9 @@ def run(env, rl_agent, episodes=25, eps_d=0.1, optimal_policy=None):
         Also, if agent is EXP-Q, no exploration is needed here (eps = 0). The agent policy accounts for it.
         """
         # The defender might have a static policy that does not learn. In such cases,
-        # as per the stackelberg threat model, the attacker should be albe to select a best response.
-        eps_d = max(eps_d * exploration_rate_decay, 0.05) if eps_d > 0.05 else eps_d
-        eps_a = eps_d if eps_d > 0.0 else 0.2 * exploration_rate_decay
+        # as per the Stackelberg threat model, the attacker should be able to select a best response.
+        eps_d = eps_d if eps_d < 0.05 else max(eps_d * exploration_rate_decay, 0.05)
+        eps_a = max(float(config['HP']['EPS_A']) * exploration_rate_decay, 0.05)
         exploration_rate_decay *= exploration_rate_decay
 
         j = 0
@@ -130,6 +128,7 @@ def save_data(data, file_name="tmp.data"):
 
 
 def learn(env, learner=StackelbergLearner, num_try=2, eps_d=0.1):
+    times = []
     episode_lengths = []
     state_rewards_for_D = []
     distance_to_optimal_policy = []
@@ -138,15 +137,22 @@ def learn(env, learner=StackelbergLearner, num_try=2, eps_d=0.1):
     # opt_pi = env.get_optimal_policy()
 
     for t in range(num_try):
-        rl_agent = learner(env, discount_factor=0.8, alpha=0.05)
-        el, srd, dto = run(
-            env, rl_agent, episodes=200, optimal_policy=opt_pi, eps_d=eps_d
-        )
+        rl_agent = learner(env,
+                           discount_factor=float(config['HP']['GAMMA']),
+                           alpha=float(config['HP']['ALPHA']))
+        tic = time.perf_counter()
+        el, srd, dto = run(env,
+                           rl_agent,
+                           episodes=int(config['HP']['EPISODES']),
+                           optimal_policy=opt_pi,
+                           eps_d=eps_d)
+        toc = time.perf_counter()
+        times.append(toc - tic)
         episode_lengths.append(el)
         state_rewards_for_D.append(srd)
         distance_to_optimal_policy.append(dto)
 
-    return episode_lengths, state_rewards_for_D, distance_to_optimal_policy
+    return episode_lengths, state_rewards_for_D, distance_to_optimal_policy, times
 
 
 def run_marl(env, learner=StackelbergLearner, eq="Nash"):
@@ -159,23 +165,36 @@ def run_marl(env, learner=StackelbergLearner, eq="Nash"):
     except:
         # For static policies, defender does not do exploitations
         # For EXP-Q learning, exploitation is part of the reward assessment.
-        eps_d = 0.2 if eq == "SSE" else 0
-        episode_lengths, state_rewards_for_D, distance_to_optimal_policy = learn(
-            env, learner, num_try=6, eps_d=eps_d
+        eps_d = 0 if eq in 'URS|SPNL' else float(config['HP']['EPS_D'])
+        episode_lengths, state_rewards_for_D, distance_to_optimal_policy, times = learn(
+            env,
+            learner,
+            num_try=int(config['HP']['NUM_TRIALS']),
+            eps_d=eps_d
         )
         save_data(
             (episode_lengths, state_rewards_for_D, distance_to_optimal_policy),
             file_name="exp_data_{}".format("{}Learner".format(eq)),
         )
+        print(f"{eq}\n{np.mean(times):0.3f}\t{np.std(times):0.3f}")
 
 
 if __name__ == "__main__":
-    env = Game()
+    env_file = importlib.import_module(config['ENV']['FILE'])
+    env = env_file.Game()
 
     """ Run MARL """
     run_marl(env, URSLearner, "URS")
     run_marl(env, EXPLearner, "EXP")
+    # This takes the nashpy library more than 2 hours to find the Nash Equilibrium in one episode.
+    # run_marl(env, NashLearner, "Nash")
     run_marl(env, StackelbergLearner, "SSE")
 
-    env_with_start_states = Game(start_states=[2, 3])
-    run_marl(env_with_start_states, StaticPolicyNoLearner, "SPNL")
+    if 'stochastic' not in config['ENV']['FILE']:
+        # Policy in the paper below is only devised for deterministic cases. Hence, showing
+        # it is sub-optimal in stochastic setting would be an unfair comparison.
+        # Sengupta, S., Vadlamudi, S. G., Kambhampati, S., Doupé, A., Zhao, Z., Taguinod, M.,
+        # & Ahn, G. J. (2017, May). A Game Theoretic Approach to Strategy Generation for
+        # Moving Target Defense in Web Applications. In AAMAS (pp. 178-186).
+        env_with_start_states = env_file.Game(start_states=[2, 3])
+        run_marl(env_with_start_states, StaticPolicyNoLearner, "SPNL")

@@ -1,3 +1,4 @@
+import nashpy as nash
 import numpy as np
 import importlib
 import pprint
@@ -345,9 +346,9 @@ class EXPLearner(QLearner):
                     Q_t += self.Q_D[theta][sda]
 
                 self.sum_R["{}_{}".format(s, self.A_D[s][i])] += (
-                    self.attacker_theta_probs[theta]
-                    * Q_t
-                    / self.policy_D[s]["pi_{}".format(self.A_D[s][i])]
+                        self.attacker_theta_probs[theta]
+                        * Q_t
+                        / self.policy_D[s]["pi_{}".format(self.A_D[s][i])]
                 )
 
         x = []
@@ -358,8 +359,8 @@ class EXPLearner(QLearner):
                     0.1
                     / len(self.A_D[s])
                     * (
-                        self.sum_R["{}_{}".format(s, self.A_D[s][j])]
-                        - self.sum_R["{}_{}".format(s, self.A_D[s][i])]
+                            self.sum_R["{}_{}".format(s, self.A_D[s][j])]
+                            - self.sum_R["{}_{}".format(s, self.A_D[s][i])]
                     )
                 )
             x.append(0.9 / denominator + 0.1 / len(self.A_D[s]))
@@ -458,7 +459,7 @@ class EXPLearner(QLearner):
 
 
 class StaticPolicyNoLearner(QLearner):
-    def __init__(self, *args, **kwargs,):
+    def __init__(self, *args, **kwargs, ):
         super(StaticPolicyNoLearner, self).__init__(*args, **kwargs)
         self.name = "StaticPolicyNoLearner"
         self.lib = importlib.import_module("gurobi")
@@ -569,3 +570,77 @@ class StaticPolicyNoLearner(QLearner):
                     if "V_a_{}".format(theta) in var.varName:
                         self.V_A[theta][s] = float(var.x)
         del m
+
+
+class NashLearner(QLearner):
+    """
+    Code for Bayesian Nash Q-learning in the context of Bayesian Stackelberg Markov Games.
+    Difficult to test for the normal MTD web-app test case because at least one attacker type
+    has more than 250 actions. This takes the nashpy library for ever (at least more that 2
+    hours) to find the Nash Equilibrium.
+    """
+    def __init__(self, *args, **kwargs):
+        super(NashLearner, self).__init__(*args, **kwargs)
+        self.name = 'NashLearner'
+
+    def get_name(self):
+        return self.name
+
+    # Given the Q-values, update (1) the value of state s and (2) the policy of the agents
+    def update_value_and_policy(self, s):
+        all_V_D = []
+        all_pi_D = []
+
+        for theta in range(self.num_attacker_thetas):
+            num_d = len(self.A_D[s])
+            num_a = len(self.A_A[theta][s])
+
+            # Compute the Q-value matrix of the two players
+            M_D = []
+            M_A = []
+            for d in range(num_d):
+                row_D = []
+                row_A = []
+                for a in range(num_a):
+                    k = "{}_{}_{}".format(s, self.A_D[s][d], self.A_A[theta][s][a])
+                    row_D.append(self.Q_D[theta][k])
+                    row_A.append(self.Q_A[theta][k])
+                M_D.append(row_D)
+                M_A.append(row_A)
+
+            V_D_i, self.V_A[theta][s], pi_D_i, pi_A = self.find_nash(M_D, M_A)
+
+            # Save defender value and strategy against attacker type theta
+            assert len(self.A_D[s]) == len(pi_D_i)
+            all_V_D.append(V_D_i)
+            all_pi_D.append(pi_D_i)
+
+            # Update attacker's policy
+            assert len(self.A_A[theta][s]) == len(pi_A)
+            for i in range(len(self.A_A[theta][s])):
+                action_name = self.A_A[theta][s][i]
+                self.policy_A[theta][s]["pi_{}".format(action_name)] = pi_A[i]
+
+        assert (len(all_V_D) == self.num_attacker_thetas)
+        self.V_D[s] = sum(
+            [all_V_D[t] * self.attacker_theta_probs[t] for t in range(self.num_attacker_thetas)]
+        )
+        assert (len(all_pi_D) == self.num_attacker_thetas)
+        for i in range(len(self.A_D)):
+            self.policy_D[s]["pi_{}".format(self.A_D[s][i])] = sum(
+                [all_pi_D[t][i] * self.attacker_theta_probs[t] for t in range(self.num_attacker_thetas)]
+            )
+
+    @staticmethod
+    def find_nash(R_1, R_2):
+        g = nash.Game(R_1, R_2)
+        try:
+            D_s, A_s = list(g.support_enumeration())[0]
+        except IndexError:
+            # When there exists no pure strategy nash eq. Unfortunately, this might not always
+            # help when the game is degenerate: https://github.com/drvinceknight/Nashpy/issues/35
+            # print('[DEBUG] Using Lemke Howson Enumeration.')
+            D_s, A_s = list(g.lemke_howson_enumeration())[0]
+        game_value = g[D_s, A_s]
+
+        return game_value[0], game_value[1], D_s, A_s

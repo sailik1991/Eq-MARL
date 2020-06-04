@@ -1,6 +1,4 @@
 from agents import StackelbergLearner, URSLearner
-from environments.mtd_web_apps.env import Game
-
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
@@ -61,8 +59,6 @@ def get_data(agent="SSE", data_len=100):
 
 
 if __name__ == "__main__":
-    env = Game()
-
     """ Set graph variables """
     sns.set()
     sns.set_context("paper")  # options: paper, talk, posters
@@ -73,6 +69,7 @@ if __name__ == "__main__":
     rewards = get_data("SSE")
     rewards += get_data("URS")
     rewards += get_data("EXP")
+    # If plotting rewards for stochastic env, comment this
     rewards += get_data("SPNL")
 
     plot_rewards(rewards)
