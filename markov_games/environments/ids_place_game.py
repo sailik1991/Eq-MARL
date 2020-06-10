@@ -60,12 +60,7 @@ class Game(object):
             ],
         ]
 
-        self.opt_pi = {
-            0: {"pi_lost": 1.0},
-            1: {"pi_mon-LDAP": 0.6, "pi_no-mon": 0.4},
-            2: {"pi_mon-FTP": 0.461, "pi_mon-Web": 0.539, "pi_no-mon": 0.0,},
-            3: {"pi_mon-FTP": 1.0, "pi_no-mon": 0.0},
-        }
+        self.opt_pi = {}
 
     def get_start_state(self):
         return np.random.choice(self.start_S)

@@ -70,6 +70,7 @@ class Game(object):
         return self.R_D[k] - 0.1 * self.switching_cost[s][next_s], self.R_A[k], next_s
 
     def is_end(self, s):
+        assert s in self.S
         if s in self.end_S:
             return True
         return False

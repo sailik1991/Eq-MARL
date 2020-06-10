@@ -30,15 +30,24 @@ def get_data(agent="SSE", data_len=100):
         open("outputs/exp_data_{}Learner.pickle".format(agent), "rb")
     )
 
+    legends = {
+        "URS": "URS",
+        "SSE": "BSS-Q"
+    }
+
     state_rewards = []
     for trial in range(len(state_rewards_for_D)):
         for state, reward_list in state_rewards_for_D[trial].items():
             for eps in range(min(data_len, len(reward_list))):
                 try:
-                    state_rewards.append([agent, state, trial, eps, reward_list[eps]])
+                    agent_name = legends[agent]
+                except KeyError:
+                    agent_name = "{}-Q".format(agent)
+                try:
+                    state_rewards.append([agent_name, state, trial, eps, reward_list[eps]])
                 except KeyError:
                     state_rewards[state] = [
-                        [agent, state, trial, eps, reward_list[eps]]
+                        [agent_name, state, trial, eps, reward_list[eps]]
                     ]
 
     return state_rewards
