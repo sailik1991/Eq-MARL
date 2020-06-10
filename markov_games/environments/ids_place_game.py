@@ -1,6 +1,6 @@
 import numpy as np
 
-__author__ = "Sailik Sengupta"
+__author__ = "Hello.. Hello.. is there anybody in there."
 
 
 class Game(object):
