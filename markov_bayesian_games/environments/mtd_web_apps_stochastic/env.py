@@ -21,11 +21,6 @@ class Game(object):
             defense_actions = [str(i) for i in self.S]
             A_D = [defense_actions for i in self.S]
 
-            self.switching_cost = []
-            for i in range(num_states):
-                s_i = list(map(float, f.readline().split()))
-                self.switching_cost.append(s_i)
-
             self.switching_probs = []
             for i in range(num_states):
                 s_i = list(map(float, f.readline().split()))
@@ -74,7 +69,7 @@ class Game(object):
         next_s = np.random.choice([switch_s, s], p=[switch_p, 1 - switch_p])
 
         k = "{}_{}_{}".format(t, a_D, a_A)
-        return self.R_D[k] - 0.1 * self.switching_cost[s][next_s], self.R_A[k], next_s
+        return self.R_D[k], self.R_A[k], next_s
 
     def is_end(self, s):
         if s in self.end_S:

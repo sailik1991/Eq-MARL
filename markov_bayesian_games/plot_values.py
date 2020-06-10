@@ -30,14 +30,15 @@ def plot_rewards(state_rewards):
     plt.savefig("./images/state_rewards.png")
 
 
-def get_data(agent="SSE", data_len=100):
+def get_data(agent="SSE", data_len=80):
     episode_lengths, state_rewards_for_D, distance_to_optimal_policy = pickle.load(
         open("outputs/exp_data_{}Learner.pickle".format(agent), "rb")
     )
 
     legends = {
         "EXP": "B-EXP-Q",
-        "SPNL": "S-OPT"
+        "SPNL": "S-OPT",
+        "SSE": "BSS-Q"
     }
 
     state_rewards = []
@@ -70,6 +71,6 @@ if __name__ == "__main__":
     rewards += get_data("URS")
     rewards += get_data("EXP")
     # If plotting rewards for stochastic env, comment this
-    rewards += get_data("SPNL")
+    # rewards += get_data("SPNL")
 
     plot_rewards(rewards)
