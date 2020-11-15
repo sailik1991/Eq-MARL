@@ -1,4 +1,3 @@
-from agents import StackelbergLearner, URSLearner
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
@@ -62,7 +61,7 @@ def get_data(agent="SSE", data_len=80):
 if __name__ == "__main__":
     """ Set graph variables """
     sns.set()
-    sns.set_context("paper")  # options: paper, talk, posters
+    sns.set_context("talk")  # options: paper, talk, posters
     my_colors = sns.set_palette("deep")
     # my_colors = sns.xkcd_palette(['denim blue', 'amber', 'pale red', 'faded green'])
     sns.set_palette(sns.color_palette(my_colors))

@@ -1,4 +1,3 @@
-from agents import StackelbergLearner, URSLearner
 import matplotlib.pyplot as plt
 from pandas import DataFrame
 import seaborn as sns
@@ -56,7 +55,7 @@ def get_data(agent="SSE", data_len=100):
 if __name__ == "__main__":
     """ Set graph variables """
     sns.set()
-    sns.set_context("paper")  # options: paper, talk, posters
+    sns.set_context("talk")  # options: paper, talk, posters
     sns.set_palette("deep")
 
     rewards = get_data("SSE")
