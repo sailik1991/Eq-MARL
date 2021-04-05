@@ -1,8 +1,10 @@
 ##### Table of Contents  
-[Overview and Running the Code](#headers_1)
-[Citation](#headers_2)
+- [Overview and Running the Code](#headers_1)
+
+- [Citation](#headers_2)
 
 <a name="headers_1"/>
+
 ## Overview and Running the Code
 
 The code learns movement policies in three MTD domain. The conda environment with all the prerequisite dependencies can be found at:
@@ -143,6 +145,7 @@ python run.py
 python plot_values.py
 ```
 <a name="headers_2"/>
+
 ## Citation
 ```
 @article{sengupta2020multi,
