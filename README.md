@@ -143,7 +143,11 @@ python run.py
 
 # plot using generated data (stored in output folder)
 python plot_values.py
+
+# View output
+eog ./images/mtd_wa_stochastic/state_rewards.png
 ```
+
 <a name="headers_2"/>
 
 ## Citation
@@ -154,7 +158,4 @@ python plot_values.py
   journal={NeurIPS Workshop on Real-world Reinforcement Learning},
   year={2020}
 }
-```
-# View output
-eog ./images/mtd_wa_stochastic/state_rewards.png
 ```
