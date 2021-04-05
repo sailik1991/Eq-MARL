@@ -1,3 +1,10 @@
+##### Table of Contents  
+[Overview and Running the Code](#headers_1)
+[Citation](#headers_2)
+
+<a name="headers_1"/>
+## Overview and Running the Code
+
 The code learns movement policies in three MTD domain. The conda environment with all the prerequisite dependencies can be found at:
 ```
 ./conda_env.yml
@@ -134,7 +141,17 @@ python run.py
 
 # plot using generated data (stored in output folder)
 python plot_values.py
-
+```
+<a name="headers_2"/>
+## Citation
+```
+@article{sengupta2020multi,
+  title={Multi-agent reinforcement learning in bayesian stackelberg markov games for adaptive moving target defense},
+  author={Sengupta, Sailik and Kambhampati, Subbarao},
+  journal={NeurIPS Workshop on Real-world Reinforcement Learning},
+  year={2020}
+}
+```
 # View output
 eog ./images/mtd_wa_stochastic/state_rewards.png
 ```
