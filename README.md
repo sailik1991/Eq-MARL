@@ -1,7 +1,9 @@
 ##### Table of Contents  
 - [Overview and Running the Code](#headers_1)
 
-- [Citation](#headers_2) [If you use the repository or a version derived from it, please cite it]
+- [Citation](#headers_2)
+
+If you use the code or derive code from it-- Cite the MIT License, Cite our work
 
 <a name="headers_1"/>
 
